@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Miss Wong 黃老師 - Genre Guide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #F5F0E8;
+      color: #333;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      color: #2D5F7C;
+      font-size: 1.4em;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      color: #888;
+      font-size: 0.85em;
+    }
+
+    /* ===== GENRE GRID ===== */
+    .genre-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .genre-card {
+      background: white;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .genre-card:hover {
+      border-color: #E8A838;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .genre-card.selected {
+      border-color: #2D5F7C;
+      background: #EDF4F8;
+    }
+
+    .genre-card .emoji { font-size: 1.8em; margin-bottom: 4px; }
+    .genre-card .name { font-size: 0.8em; font-weight: 600; color: #2D5F7C; }
+
+    /* ===== FLASH BUTTON ===== */
+    .flash-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .flash-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #E8A838;
+      background: white;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85em;
+      color: #2D5F7C;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .flash-btn:hover { background: #E8A838; color: white; }
+    .flash-btn.active { background: #2D5F7C; color: white; border-color: #2D5F7C; }
+
+    /* ===== FLASH EXERCISE ===== */
+    .flash-area {
+      display: none;
+      text-align: center;
+    }
+
+    .flash-area.visible { display: block; }
+
+    .flash-passage {
+      background: white;
+      border: 2px solid #E8A838;
+      border-radius: 10px;
+      padding: 24px;
+      font-size: 0.95em;
+      line-height: 1.7;
+      margin: 12px 0;
+      min-height: 120px;
+      text-align: left;
+      white-space: pre-line;
+    }
+
+    .flash-passage.hidden-text {
+      color: transparent;
+      user-select: none;
+      background: repeating-linear-gradient(
+        45deg, #f0f0f0, #f0f0f0 10px, #e8e8e8 10px, #e8e8e8 20px
+      );
+    }
+
+    .countdown {
+      font-size: 3em;
+      font-weight: bold;
+      color: #2D5F7C;
+      padding: 30px;
+    }
+
+    .flash-guess-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: 12px 0;
+    }
+
+    .guess-btn {
+      padding: 8px 4px;
+      border: 2px solid #ddd;
+      background: white;
+      border-radius: 6px;
+      font-size: 0.75em;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .guess-btn:hover { border-color: #E8A838; color: #2D5F7C; }
+    .guess-btn.picked { border-color: #2D5F7C; background: #2D5F7C; color: white; }
+
+    .speed-select {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin: 8px 0;
+    }
+
+    .speed-btn {
+      padding: 6px 14px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 4px;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
+
+    .speed-btn.active { background: #2D5F7C; color: white; border-color: #2D5F7C; }
+
+    .hint {
+      font-size: 0.8em;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .genre-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .genre-card { padding: 10px 6px; }
+      .genre-card .emoji { font-size: 1.4em; }
+      .genre-card .name { font-size: 0.7em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📚 Miss Wong 黃老師</h1>
+      <p>Pick a genre, then let's talk about it in chat.</p>
+    </header>
+
+    <div class="genre-grid" id="genreGrid"></div>
+
+    <div class="flash-bar">
+      <button class="flash-btn" id="flashBtn">⚡ Flash Genre Recognition</button>
+    </div>
+
+    <div class="flash-area" id="flashArea">
+      <div class="speed-select" id="speedSelect"></div>
+      <div id="flashCountdown" class="countdown" style="display:none;"></div>
+      <div id="flashPassage" class="flash-passage" style="display:none;"></div>
+      <div id="flashGuess" style="display:none;">
+        <p style="font-size:0.85em; font-weight:600; color:#2D5F7C; margin-bottom:6px;">What genre was that?</p>
+        <div class="flash-guess-grid" id="flashGuessGrid"></div>
+        <p class="hint">Pick your guess, then tell Miss Wong in chat what cues you noticed.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://play.workadventu.re/iframe_api.js"></script>
+  <script>
+    // ===== CONFIG =====
+    const genres = [
+      { id: "argumentative", name: "Argumentative Essay", emoji: "⚔️" },
+      { id: "discursive", name: "Discursive Essay", emoji: "⚖️" },
+      { id: "formal-letter", name: "Formal Letter", emoji: "📨" },
+      { id: "informal-letter", name: "Informal Letter", emoji: "💬" },
+      { id: "proposal", name: "Proposal", emoji: "📋" },
+      { id: "report", name: "Report", emoji: "📊" },
+      { id: "speech", name: "Speech", emoji: "🎤" },
+      { id: "short-story", name: "Short Story", emoji: "📖" },
+      { id: "blog-article", name: "Blog / Article", emoji: "✍️" },
+    ];
+
+    const flashPassages = [
+      { genre: "argumentative", text: "Schools should implement stricter uniform policies because they promote equality and reduce social pressure. Students from disadvantaged backgrounds feel less isolated when appearance distinctions are minimized. While critics argue uniforms restrict expression, controlled appearance enhances school identity and discipline. Therefore, mandatory uniforms benefit the majority." },
+      { genre: "formal-letter", text: "15 April 2026\nDear Sir or Madam,\nI am writing to inquire about the recent changes to the school bus schedule. The new 4:15 PM departure time creates difficulties for students with after-school activities. I would appreciate clarification on whether exceptions can be arranged.\nYours faithfully,\nLi Ming" },
+      { genre: "informal-letter", text: "Dear Alex!\nYou won't believe what happened in PE today! Mr. Chan challenged us to a basketball match against the F.6 team, and guess what? We actually won! Everyone was laughing and cheering like crazy. How's everything with you? Haven't heard from you in ages! Let's catch up soon.\nCheers, John" },
+      { genre: "proposal", text: "PROPOSAL: School Community Service Initiative\nAIM: Establish volunteer opportunities developing student leadership.\nRECOMMENDATION 1: Partner with local NGOs for three service tracks.\nJUSTIFICATION: Develops soft skills valued by universities.\nEXPECTED OUTCOMES: Enhanced character development and improved school reputation." },
+      { genre: "report", text: "REPORT: Student Mental Health Survey Results\nPURPOSE: To assess student stress levels and identify support needs.\nFINDINGS: 68% of respondents report moderate to severe stress. 42% experience sleep difficulties. Only 30% access counselling despite need.\nRECOMMENDATIONS: Hire additional school counsellor and implement peer support training." },
+      { genre: "speech", text: "Listen, we all know that climate change feels overwhelming. Scientists talk about carbon emissions and rising temperatures, and it's easy to think our individual actions don't matter. But I'm here to tell you: they do. Imagine if every student in this school committed to reducing plastic waste. That's thousands of items diverted from landfills. Change starts with us." },
+      { genre: "short-story", text: "The old bookshop smelled of dust and forgotten stories. Maya hadn't been here since she was seven — when her grandfather first placed a leather-bound volume in her hands. Now, three years after his death, she stood before the same shelf, searching. There: his handwriting in the margin. A message left for her, a bridge across time." },
+      { genre: "blog-article", text: "Why Your Teenager Isn't Responding to Your Texts\n\nParenting a teen can feel like trying to communicate with someone on another planet. They vanish into their rooms, emerge only for meals, and treat your messages like spam. But here's the secret: they're not rejecting you — they're developing independence. This is actually healthy!" },
+      { genre: "discursive", text: "The question of whether technology benefits modern education requires careful consideration. On one hand, technology provides unprecedented access to information and enables personalized learning. Conversely, excessive screen time distracts students and widens achievement gaps. The answer lies not in technology itself, but in deliberate, balanced integration." },
+    ];
+
+    let studentId = new URLSearchParams(window.location.search).get("studentId") || "unknown";
+    let flashSpeed = 5;
+    let currentFlashGenre = null;
+
+    // ===== SAFE BROADCAST =====
+    function safeBroadcast(key, data) {
+      try { WA.event.broadcast(key, data); }
+      catch (e) { console.log(`[DEV] ${key}:`, data); }
+    }
+
+    // ===== RENDER GENRE GRID =====
+    function renderGrid() {
+      const grid = document.getElementById("genreGrid");
+      genres.forEach(g => {
+        const card = document.createElement("div");
+        card.className = "genre-card";
+        card.innerHTML = `<div class="emoji">${g.emoji}</div><div class="name">${g.name}</div>`;
+        card.onclick = () => {
+          document.querySelectorAll(".genre-card").forEach(c => c.classList.remove("selected"));
+          card.classList.add("selected");
+          safeBroadcast("genre-selected", { genre: g.name, genreId: g.id, studentId });
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    // ===== FLASH RECOGNITION =====
+    function setupFlash() {
+      const flashBtn = document.getElementById("flashBtn");
+      const flashArea = document.getElementById("flashArea");
+      let flashOpen = false;
+
+      flashBtn.onclick = () => {
+        flashOpen = !flashOpen;
+        flashArea.classList.toggle("visible", flashOpen);
+        flashBtn.classList.toggle("active", flashOpen);
+        if (flashOpen) startFlashRound();
+      };
+
+      // Speed selector
+      const speedSelect = document.getElementById("speedSelect");
+      [5, 3, 1].forEach(s => {
+        const btn = document.createElement("button");
+        btn.className = "speed-btn" + (s === flashSpeed ? " active" : "");
+        btn.textContent = s + "s";
+        btn.onclick = () => {
+          flashSpeed = s;
+          document.querySelectorAll(".speed-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+        };
+        speedSelect.appendChild(btn);
+      });
+    }
+
+    function startFlashRound() {
+      const passage = flashPassages[Math.floor(Math.random() * flashPassages.length)];
+      currentFlashGenre = passage.genre;
+
+      const countdownEl = document.getElementById("flashCountdown");
+      const passageEl = document.getElementById("flashPassage");
+      const guessEl = document.getElementById("flashGuess");
+
+      // Reset
+      guessEl.style.display = "none";
+      passageEl.style.display = "none";
+      passageEl.classList.remove("hidden-text");
+      countdownEl.style.display = "block";
+
+      // Countdown 3-2-1
+      let count = 3;
+      countdownEl.textContent = count;
+      const ticker = setInterval(() => {
+        count--;
+        if (count <= 0) {
+          clearInterval(ticker);
+          countdownEl.style.display = "none";
+          // Show passage
+          passageEl.textContent = passage.text;
+          passageEl.style.display = "block";
+          // Hide after flashSpeed seconds
+          setTimeout(() => {
+            passageEl.classList.add("hidden-text");
+            showGuessButtons();
+          }, flashSpeed * 1000);
+        } else {
+          countdownEl.textContent = count;
+        }
+      }, 1000);
+    }
+
+    function showGuessButtons() {
+      const guessEl = document.getElementById("flashGuess");
+      const grid = document.getElementById("flashGuessGrid");
+      grid.innerHTML = "";
+      guessEl.style.display = "block";
+
+      genres.forEach(g => {
+        const btn = document.createElement("button");
+        btn.className = "guess-btn";
+        btn.textContent = g.emoji + " " + g.name;
+        btn.onclick = () => {
+          document.querySelectorAll(".guess-btn").forEach(b => b.classList.remove("picked"));
+          btn.classList.add("picked");
+          const actualName = genres.find(x => x.id === currentFlashGenre)?.name || currentFlashGenre;
+          safeBroadcast("flash-answer", {
+            studentId,
+            guess: g.name,
+            actualGenre: actualName,
+            speed: flashSpeed,
+          });
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    // ===== WA EVENT LISTENER =====
+    function setupWA() {
+      try {
+        WA.onInit().then(() => {
+          console.log("Genre Guide connected to WorkAdventure");
+        }).catch(() => {
+          console.log("Running outside WorkAdventure — dev mode");
+        });
+      } catch (e) {
+        console.log("WA API not available — dev mode");
+      }
+    }
+
+    // ===== INIT =====
+    document.addEventListener("DOMContentLoaded", () => {
+      renderGrid();
+      setupFlash();
+      setupWA();
+    });
+  </script>
+</body>
+</html>
