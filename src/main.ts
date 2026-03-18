@@ -1,4 +1,4 @@
-/// <reference path="../node_modules/@workadventure/iframe-api-typings/iframe_api.d.ts" />
+/// <reference types="@workadventure/iframe-api-typings" />
 
 /**
  * Miss Wong 黃老師 — Genre Guide Bot
@@ -208,74 +208,81 @@ async function respond(playerId: string, text: string): Promise<void> {
 }
 
 // ============================================================
-// MAIN
+// MAIN — default export with run() method (Custom Script bot format)
 // ============================================================
 
-export async function run(): Promise<void> {
-  await WA.onInit();
-  WA.players.configureTracking({ players: true, movement: false });
+export default {
+  run: async () => {
+    await WA.onInit();
+    console.log("Miss Wong 黃老師 bot initializing...");
 
-  // --- When student enters bubble ---
-  WA.player.proximityMeeting.onJoin().subscribe(async (users: any) => {
-    if (chatting) return;
-    chatting = true;
+    await WA.players.configureTracking({ players: true, movement: false });
 
-    await WA.chat.sendChatMessage(
-      "Hi! I'm Miss Wong 黃老師. Pick a genre from the menu and we'll explore it together — or just ask me anything about HKDSE writing. 🎓",
-      { scope: "bubble" }
-    );
+    // --- When student enters bubble ---
+    WA.player.proximityMeeting.onJoin().subscribe(async (users: any) => {
+      if (chatting) return;
+      chatting = true;
 
-    // Open the genre selector
-    const url = pageUrl();
-    if (url) {
-      try {
-        const id = users[0]?.playerId || "unknown";
-        site = await WA.ui.website.open({
-          url: `${url}?studentId=${encodeURIComponent(id)}`,
-          allowApi: true,
-          position: { vertical: "top", horizontal: "right" },
-          size: { height: "45vh", width: "30vw" },
-        });
-      } catch (e: any) {
-        console.error("Failed to open page:", e);
+      console.log("Student entered bubble:", users);
+
+      await WA.chat.sendChatMessage(
+        "Hi! I'm Miss Wong 黃老師. Pick a genre from the menu and we'll explore it together — or just ask me anything about HKDSE writing. 🎓",
+        { scope: "bubble" }
+      );
+
+      // Open the genre selector
+      const url = pageUrl();
+      if (url) {
+        try {
+          const id = users[0]?.playerId || "unknown";
+          site = await WA.ui.website.open({
+            url: `${url}?studentId=${encodeURIComponent(id)}`,
+            allowApi: true,
+            position: { vertical: "top", horizontal: "right" },
+            size: { height: "45vh", width: "30vw" },
+          });
+          console.log("Genre guide page opened");
+        } catch (e: any) {
+          console.error("Failed to open page:", e);
+        }
       }
-    }
-  });
+    });
 
-  // --- When student leaves bubble ---
-  WA.player.proximityMeeting.onLeave().subscribe(async () => {
-    chatting = false;
-    if (site) { try { await site.close(); } catch (_) {} site = null; }
-  });
+    // --- When student leaves bubble ---
+    WA.player.proximityMeeting.onLeave().subscribe(async () => {
+      chatting = false;
+      if (site) { try { await site.close(); } catch (_e) {} site = null; }
+    });
 
-  // --- Student picks a genre from the HTML page ---
-  WA.event.on("genre-selected").subscribe((event: any) => {
-    const { genre, studentId } = event.data;
-    respond(studentId, `I want to learn about the ${genre} for my HKDSE Paper 2.`);
-  });
+    // --- Student picks a genre from the HTML page ---
+    WA.event.on("genre-selected").subscribe((event: any) => {
+      const { genre, studentId } = event.data;
+      respond(studentId, `I want to learn about the ${genre} for my HKDSE Paper 2.`);
+    });
 
-  // --- Student makes a flash guess from the HTML page ---
-  WA.event.on("flash-answer").subscribe((event: any) => {
-    const { studentId, guess, actualGenre, speed } = event.data;
-    respond(
-      studentId,
-      `[Flash drill, ${speed}s] I guessed "${guess}". The actual genre was "${actualGenre}".`
-    );
-  });
+    // --- Student makes a flash guess from the HTML page ---
+    WA.event.on("flash-answer").subscribe((event: any) => {
+      const { studentId, guess, actualGenre, speed } = event.data;
+      respond(
+        studentId,
+        `[Flash drill, ${speed}s] I guessed "${guess}". The actual genre was "${actualGenre}".`
+      );
+    });
 
-  // --- Student types directly in chat ---
-  WA.chat.onChatMessage((msg: string, event: any) => {
-    if (!event?.authorId) return; // ignore own messages
-    respond(event.authorId.toString(), msg);
-  }, { scope: "bubble" });
+    // --- Student types directly in chat ---
+    WA.chat.onChatMessage((msg: string, event: any) => {
+      if (!event?.authorId) return;
+      respond(event.authorId.toString(), msg);
+    }, { scope: "bubble" });
 
-  // --- Cleanup ---
-  setInterval(() => {
-    const cutoff = Date.now() - 30 * 60 * 1000;
-    for (const [id, s] of sessions) {
-      if (s.lastActive < cutoff) sessions.delete(id);
-    }
-  }, 5 * 60 * 1000);
+    // --- Cleanup ---
+    setInterval(() => {
+      const cutoff = Date.now() - 30 * 60 * 1000;
+      for (const [id, s] of sessions) {
+        if (s.lastActive < cutoff) sessions.delete(id);
+      }
+    }, 5 * 60 * 1000);
 
-  console.log("Miss Wong 黃老師 is ready.");
-}
+    console.log("Miss Wong 黃老師 is ready.");
+  }
+};

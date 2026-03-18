@@ -1,20 +1,17 @@
-import { defineConfig } from "vite";
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
-// Based on: https://docs.workadventu.re/developer/map-scripting/using-typescript/
+// Matches: https://github.com/workadventure/bot-starter-kit/blob/main/vite.config.ts
 export default defineConfig({
   build: {
     lib: {
-      entry: "src/main.ts",
-      name: "MissWongBot",
-      formats: ["umd"],
-      fileName: () => "bot.js",
+      entry: resolve(__dirname, 'src/main.ts'),
+      name: 'MissWongBot',
+      fileName: 'bot',
     },
-    outDir: "dist",
-    emptyOutDir: true,
     rollupOptions: {
-      output: {
-        entryFileNames: "bot.js",
-      },
+      external: [],
+      output: {},
     },
   },
-});
+})
