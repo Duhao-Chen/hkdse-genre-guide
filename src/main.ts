@@ -1,3 +1,5 @@
+/// <reference path="../node_modules/@workadventure/iframe-api-typings/iframe_api.d.ts" />
+
 /**
  * Miss Wong 黃老師 — Genre Guide Bot
  * WorkAdventure Custom Script Bot
